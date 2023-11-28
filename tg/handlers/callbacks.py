@@ -63,7 +63,8 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
         user = await sync_to_async(TelegramUser.objects.get)(user_id=callback_query.from_user.id)
         bought_products = await sync_to_async(Product.objects.filter)(user=user)
         response_text = "👤 Ваш профиль: \n➖➖➖➖➖➖➖➖➖➖\n"
-        response_text += f"💰 Баланс: `{user.balance}`\n🎁 Куплено `{bought_products.count()}`\n"
+        response_text += f"💰 Баланс: `{user.balance}`\n🎁 Куплено `{bought_products.count()}`\n\n"
+        response_text += f"⚡️ Реферальная ссылка ⬇️\n\n```https://t.me/telegenius\_bot?start={user.id}```"
         await callback_query.message.edit_text(response_text, reply_markup=kb.cabinet)
     if callback_query.data == "balance":
         user = await sync_to_async(TelegramUser.objects.get)(user_id=callback_query.from_user.id)
@@ -277,8 +278,6 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
         if user.is_admin:
             pass
 
-    if callback_query.data == "products":
-        pass
 
 
 

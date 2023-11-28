@@ -41,7 +41,8 @@ async def admin_panel(msg: Message, state: FSMContext, bot: Bot):
         for i in grams:
             response_text += f"〰️〰️*ID*: ({i.id}) | вес {i.gram} GR = ${i.usd}\n"
     response_text += "\n⚠️ Что бы удалить раздел, введите команду /delchapter *ID* раздела\n"
-    response_text += "⚠️ Что бы удалить грам, введите команду /delgram *ID* раздела\n"
+    response_text += "⚠️ Что бы удалить грам, введите команду /delgram *ID* раздела\n\n"
+    response_text += "👁‍🗨 Разослать сообщение всем пользователям бота /send\n"
 
     print("USER IN ADMIN007", user.user_id, user.username)
     if user.is_admin:

@@ -14,7 +14,7 @@ menu = [
      InlineKeyboardButton(text="Отзывы", callback_data="reviews")],
     [InlineKeyboardButton(text="⚠️ Правила", callback_data="rule"),
      InlineKeyboardButton(text="⚡️Наши ресурсы", callback_data="resources")],
-    # [InlineKeyboardButton(text="☎️ Поддержка", url="https://t.me/ololowka_raven")],
+    [InlineKeyboardButton(text="☎️ Поддержка", url="https://t.me/ololowka_raven")],
 ]
 
 menu = InlineKeyboardMarkup(inline_keyboard=menu)

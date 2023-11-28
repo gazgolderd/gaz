@@ -16,7 +16,7 @@ class TelegramUser(models.Model):
     balance = models.PositiveIntegerField(default=0)
 
     def __str__(self):
-        return self.username if self.username else None
+        return self.username if self.username else "None"
 
 
 class Rule(models.Model):
