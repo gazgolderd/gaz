@@ -36,7 +36,7 @@ async def create_invoice(product, crypto):
         invoice_data = {
             "amount": amount_in_satoshi,
             "currency": "ltc",
-            "lifetime": 120,
+            "lifetime": 1800,
             "callback_url": "http://example.com",
         }
         try:
