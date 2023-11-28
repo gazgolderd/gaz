@@ -15,8 +15,10 @@ async def add_promo_to_balance(msg: Message, state: FSMContext):
         promo_code = msg.text
         promo = await sync_to_async(Promo.objects.get)(promo_text=promo_code)
         if not promo.used:
-            user.balance = promo.amount
+            user.balance += promo.amount
             user.save()
+            promo.used = True
+            promo.save()
             await msg.answer(f"${promo.amount} добавлен в ваш баланс")
             await state.clear()
     except Exception as e:

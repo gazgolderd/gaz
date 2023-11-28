@@ -23,7 +23,7 @@ async def start_command(msg: Message, state: FSMContext, bot: Bot, command: Comm
     user.username = msg.from_user.username
     user.save()
     print("USER IN START", user.user_id, user.username)
-    is_subscribed = await bot.get_chat_member(chat_id="@thischannelfortests", user_id=msg.from_user.id)
+    is_subscribed = await bot.get_chat_member(chat_id="@BestChangeKgz", user_id=msg.from_user.id)
     if is_subscribed.status in ['member', 'administrator', 'creator']:
         await msg.answer("Бот готовится, притегните ремни!", reply_markup=kb.menu)
     else:
