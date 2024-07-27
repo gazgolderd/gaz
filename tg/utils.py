@@ -4,7 +4,7 @@ from aiohttp import ClientConnectorError
 from django.db.models import Q
 
 from . import kb
-from .models import Product
+from .models import Product, LostUserProduct
 from asgiref.sync import sync_to_async
 import aiohttp
 import asyncio
@@ -13,22 +13,17 @@ from aiogram import exceptions as tg_exceptions
 
 async def get_unique_products():
     all_products = await sync_to_async(Product.objects.filter)(sold=False)
-    print(all_products)
     unique_titles = all_products.values_list('title', flat=True).distinct()
-    print(unique_titles)
     unique_products = all_products.exclude(Q(title__in=unique_titles) & ~Q(id__in=unique_titles))
-    print(unique_products)
     return unique_products
 
 
 async def create_invoice(product, crypto):
-    account = "apr-93f993f71e2a989ecfe5dee007eba2dc"
+    account = "apr-7b9ae4297d9cbaff5a1cdcf52e6d89eb" # СЮДА АПИРОН АЙДИ
     create_invoice_url = f'https://apirone.com/api/v2/accounts/{account}/invoices'
     course = await get_crypto_with_retry(crypto)
-    print(course, "COURSE")
     if course is not None:
         ltc_price = product.gram.usd / course
-        print(ltc_price)
 
         decimal_places = 8
 
@@ -36,7 +31,7 @@ async def create_invoice(product, crypto):
         invoice_data = {
             "amount": amount_in_satoshi,
             "currency": "ltc",
-            "lifetime": 1800,
+            "lifetime": 2000,
             "callback_url": "http://example.com",
         }
         try:
@@ -88,25 +83,34 @@ async def check_invoice_paid(id: str, message, product, chapter, user):
                 async with session.get(url) as response:
                     invoice_data = await response.json()
 
-            print("INVOICE DATA", invoice_data)
 
             if invoice_data['status'] in ('completed', 'paid', 'overpaid'):
                 location = find_product_location(product, chapter)
-                location.remove(product)
-                builder = InlineKeyboardBuilder()
-                builder.add(InlineKeyboardButton(text="Оставить отзыв", callback_data=f"add_review_{product.id}"))
-                builder.add(InlineKeyboardButton(text="Открыть спор", callback_data=f"cant_find_{product.id}"))
-                builder.adjust(1)
-                await message.answer(product.text, reply_markup=builder.as_markup())
-                product.sold = True
-                product.user = user
-                product.save()
-                return
+                if location is not None:
+                    location.remove(product)
+                    builder = InlineKeyboardBuilder()
+                    builder.add(InlineKeyboardButton(text="Оставить отзыв", callback_data=f"add_review_{product.id}"))
+                    # builder.add(InlineKeyboardButton(text="Открыть спор", callback_data=f"cant_find_{product.id}"))
+                    builder.adjust(1)
+                    await message.answer(product.text, reply_markup=builder.as_markup())
+                    product.sold = True
+                    product.user = user
+                    product.save()
+                    if user.referred_by:
+                        ref_user = user.referred_by
+                        ref_user.balance += 1
+                        ref_user.save(update_fields=['balance'])
+                    return
+                else:
+                    await message.answer(f"Продукт уже забрали, но вы можете купить другой.\nВаш баланс пополнен на ${product.gram.usd}")
+                    user.balance += product.gram.usd
+                    user.save()
+                    await sync_to_async(LostUserProduct.objects.create)(user=user, lost_product=product,
+                                                                       added_to_balance=product.gram.usd)
+                    return
             if invoice_data['status'] == 'expired':
                 await message.answer("Вы просрочили время")
                 return
-            else:
-                print("Invoice is not paid for yet")
 
             await asyncio.sleep(10)
         except ClientConnectorError as e:
@@ -120,7 +124,6 @@ async def check_invoice_paid(id: str, message, product, chapter, user):
 
 
 def find_product_location(product, chapter):
-    # Проверяем, входит ли продукт в каждое поле ManyToManyField
     if product in chapter.pervomaysky.all():
         return chapter.pervomaysky
     elif product in chapter.oktyabrsky.all():
@@ -130,6 +133,6 @@ def find_product_location(product, chapter):
     elif product in chapter.sverdlovsky.all():
         return chapter.sverdlovsky
     else:
-        return None  # Если продукт не найден в ни одном из полей
+        return None
 
 

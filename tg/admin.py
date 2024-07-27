@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import TelegramUser, Rule, Review, Product, Chapter, Gram
+from .models import TelegramUser, Rule, Review, Product, Chapter, Gram, Promo, LostUserProduct
 
 
 @admin.register(TelegramUser)
@@ -30,3 +30,13 @@ class ChapterAdmin(admin.ModelAdmin):
 @admin.register(Gram)
 class GramAdmin(admin.ModelAdmin):
     list_display = ['gram']
+
+
+@admin.register(Promo)
+class PromoAdmin(admin.ModelAdmin):
+    list_display = ['amount']
+
+
+@admin.register(LostUserProduct)
+class LostUserProductAdmin(admin.ModelAdmin):
+    list_display = ['user']

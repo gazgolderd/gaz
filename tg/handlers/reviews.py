@@ -8,7 +8,7 @@ router = Router()
 
 async def get_reviews(page, msg):
     page_size = 3
-    reviews = await sync_to_async(Review.objects.all)()
+    reviews = await sync_to_async(Review.objects.order_by('-id').all)()
     total_pages = (len(reviews) + page_size - 1) // page_size
 
     if page <= total_pages:

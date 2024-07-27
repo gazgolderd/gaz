@@ -3,10 +3,11 @@ from aiogram.filters import Command, CommandObject
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from asgiref.sync import sync_to_async
-from ..models import TelegramUser, Chapter, Gram
+from ..models import TelegramUser, Chapter, Gram, Product
 from .. import kb, text
 from ..states import SendState
-
+from django.utils import timezone
+from datetime import datetime, timedelta
 router = Router()
 
 
@@ -14,7 +15,7 @@ router = Router()
 async def start_command(msg: Message, state: FSMContext, bot: Bot, command: CommandObject):
     user, created = await sync_to_async(TelegramUser.objects.get_or_create)(user_id=msg.from_user.id)
     referred_by_id = command.args
-    if user.referred_by is None and referred_by_id and created:
+    if user.referred_by is None and referred_by_id:
         user.referred_by = await sync_to_async(TelegramUser.objects.get)(id=referred_by_id)
         await bot.send_message(user.referred_by.user_id, text=text.referred_announce.format(user=user.username))
 
@@ -23,26 +24,34 @@ async def start_command(msg: Message, state: FSMContext, bot: Bot, command: Comm
     user.username = msg.from_user.username
     user.save()
     print("USER IN START", user.user_id, user.username)
-    is_subscribed = await bot.get_chat_member(chat_id="@BestChangeKgz", user_id=msg.from_user.id)
-    if is_subscribed.status in ['member', 'administrator', 'creator']:
-        await msg.answer("Бот готовится, притегните ремни!", reply_markup=kb.menu)
-    else:
-        await msg.answer("Подпишитесь на канал", reply_markup=kb.not_subscribed)
+    await msg.answer("Приветствие ☀️", reply_markup=kb.menu)
+    # is_subscribed = await bot.get_chat_member(chat_id="@GAZGOLDER_TEST", user_id=msg.from_user.id)
+    # if is_subscribed.status in ['member', 'administrator', 'creator']:
+    #     await msg.answer("Приветствие", reply_markup=kb.menu)
+    # else:
+    #     await msg.answer("Подпишитесь на канал", reply_markup=kb.not_subscribed)
 
 
 @router.message(Command("admin007"))
 async def admin_panel(msg: Message, state: FSMContext, bot: Bot):
     user = await sync_to_async(TelegramUser.objects.get)(user_id=msg.from_user.id)
     chapters = await sync_to_async(Chapter.objects.all)()
-    response_text = "➖➖➖*КОММАНДЫ АДМИНИСТРАТОРА*➖➖➖\n\n"
+    response_text = "➖➖*ПАНЕЛЬ АДМИНИСТРАТОРА*➖➖\n\n"
     for i in chapters:
-        response_text += f"⚫️ *({i.id}) | {i.title}* \n"
+        perv = i.pervomaysky.count()
+        okt = i.oktyabrsky.count()
+        leni = i.leninsky.count()
+        sverd = i.sverdlovsky.count()
+        total = perv + okt + leni + sverd
+        response_text += f"⚫️ *({i.id}) | {i.title}*\n({total} в продаже)\n"
         grams = await sync_to_async(Gram.objects.filter)(chapter=i)
         for i in grams:
             response_text += f"〰️〰️*ID*: ({i.id}) | вес {i.gram} GR = ${i.usd}\n"
     response_text += "\n⚠️ Что бы удалить раздел, введите команду /delchapter *ID* раздела\n"
     response_text += "⚠️ Что бы удалить грам, введите команду /delgram *ID* раздела\n\n"
     response_text += "👁‍🗨 Разослать сообщение всем пользователям бота /send\n"
+    response_text += "👁‍🗨 Для просмотра статистика за период /showstats *дней*\n"
+    response_text += "👁‍🗨 Для добавления курьера /cour *юзернейм курьера без @*\n"
 
     print("USER IN ADMIN007", user.user_id, user.username)
     if user.is_admin:
@@ -83,3 +92,60 @@ async def delete_gram(msg: Message, command: CommandObject):
         await msg.answer(f"Грам {gram.gram}, относящий к {gram.chapter.title} удалён")
     if not args and user.is_admin or not args and user.is_super_admin:
         await msg.answer("Введите ID грама!\nНапример: /delgram 5")
+
+
+@router.message(Command("showstats"))
+async  def show_statistic(msg: Message, command: CommandObject):
+    args = command.args
+    user = await sync_to_async(TelegramUser.objects.get)(user_id=msg.from_user.id)
+    if args and user.is_admin or args and user.is_super_admin:
+        try:
+            days_ago = int(args)
+        except ValueError:
+            await msg.answer("Введите кол-во дней (период)\nНапример /showstats 4")
+            return
+        three_days_ago = datetime.now() - timedelta(days=int(args))
+        sold_products = await sync_to_async(Product.objects.filter)(
+            sold=True,
+            created_at__gte=three_days_ago
+        )
+        all_sum = 0
+        text = "Статистика проданных продуктов за последние {} дней:\n\n".format(days_ago)
+        for stats in sold_products:
+            text += f"ID продукта: {stats.id}\n"
+            text += f"Продан пользователю: {stats.user.username if stats.user.username else stats.user.user_id}\n"
+            text += f"Раздел: {stats.gram.chapter}\n"
+            text += f"Грамм: {stats.gram.gram}\n"
+            text += f"Стоимость: {stats.gram.usd}\n"
+            text += "-" * 20 + "\n"
+            all_sum += stats.gram.usd
+        text += f"\n\nОбщая сумма проданных продуктов {all_sum} за {days_ago} дней"
+        await msg.answer(text)
+
+
+@router.message(Command("c"))
+async def courier(msg: Message):
+    user = await sync_to_async(TelegramUser.objects.get)(user_id=msg.from_user.id)
+    if user.is_courier:
+        await msg.answer("*Добавление продуктов:*\n➖➖➖➖➖➖➖➖➖➖➖➖\n",
+                         reply_markup=kb.add_product_cour)
+
+
+@router.message(Command("cour"))
+async def add_courier(msg: Message, command: CommandObject):
+    user = await sync_to_async(TelegramUser.objects.get)(user_id=msg.from_user.id)
+    if user.is_admin:
+        args = command.args
+        cour = await sync_to_async(TelegramUser.objects.get)(username=args)
+        if cour.is_courier:
+            cour.is_courier = False
+            cour.save()
+            await msg.answer(f"Пользователь @{user.username} удален из курьеров")
+        elif not cour.is_courier:
+            cour.is_courier = True
+            cour.save()
+            await msg.answer(f"Пользователь @{user.username} успешно добавлен в курьеры")
+
+
+
+

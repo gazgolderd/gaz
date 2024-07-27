@@ -1,9 +1,9 @@
 from aiogram import Router, Bot
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
-from ..states import PromoCodeUser, PromoCodeAdmin, TransferBalance
+from ..states import PromoCodeUser, PromoCodeAdmin, TransferBalance, ReviewState
 from asgiref.sync import sync_to_async
-from ..models import Promo, TelegramUser
+from ..models import Promo, TelegramUser, Review
 
 router = Router()
 
@@ -44,7 +44,19 @@ async def transfer_balance(msg: Message, state: FSMContext, bot: Bot):
             await msg.answer(f"Вы успешно перевели {transfer_amount} пользователю @{target_user.username}",
                              parse_mode=None)
             await state.clear()
+        else:
+            await msg.answer(f"Отказано")
     except Exception as e:
         await msg.answer("Отказано")
         print(e)
+
+
+@router.message(ReviewState.awaiting_review)
+async def add_review(msg: Message, state: FSMContext, bot: Bot):
+    await msg.delete()
+    data = await state.get_data()
+    rate = data.get("rate")
+    user = await sync_to_async(TelegramUser.objects.get)(user_id=msg.from_user.id)
+    await sync_to_async(Review.objects.create)(user=user, rating=rate, text=msg.text)
+    await msg.answer("Спасибо за ваш отзыв")
 

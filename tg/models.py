@@ -48,6 +48,9 @@ class Product(models.Model):
     sold = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
+    class Meta:
+        ordering = ['created_at']
+
 
 class Promo(models.Model):
     promo_text = models.CharField(max_length=5, unique=True)
@@ -76,3 +79,10 @@ class Chapter(models.Model):
 
 class ChannelToAnnounce(models.Model):
     text = models.TextField()
+
+
+class LostUserProduct(models.Model):
+    user = models.ForeignKey(TelegramUser, on_delete=models.SET_NULL, null=True, blank=True)
+    lost_product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    added_to_balance = models.PositiveIntegerField()
+

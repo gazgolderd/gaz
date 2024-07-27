@@ -1,3 +1,5 @@
+import asyncio
+
 from aiogram import Router, Bot
 from aiogram.types import Message, KeyboardButton
 from aiogram.fsm.context import FSMContext
@@ -7,7 +9,7 @@ from ..states import PromoCodeUser, PromoCodeAdmin, ChapterState, GramState, Pro
 from asgiref.sync import sync_to_async
 from ..models import Promo, TelegramUser, Product, Chapter, Gram
 from .. import text, kb
-
+from aiogram.types import ReplyKeyboardRemove
 router = Router()
 
 
@@ -70,6 +72,7 @@ async def add_description(msg: Message, state: FSMContext, bot: Bot):
                 chapter.description = description
                 chapter.photo = photo_id
                 chapter.save()
+
                 await bot.send_photo(chat_id=user.user_id, photo=chapter.photo, caption=text.chapter.format(
                     title=chapter.title, description=chapter.description))
                 await state.clear()
@@ -201,7 +204,7 @@ async def add_products(msg: Message, state: FSMContext):
                     chapter.sverdlovsky.add(product)
             chapter.save()
             await state.clear()
-            await msg.answer("Успешно")
+            await msg.answer("Успешно", reply_markup=ReplyKeyboardRemove())
     except Exception as e:
         print(e)
 
@@ -210,19 +213,16 @@ async def add_products(msg: Message, state: FSMContext):
 async def handle_send_all(message: Message, state: FSMContext, bot: Bot):
     text_to_send = message.text
     users = await sync_to_async(TelegramUser.objects.all)()
-
+    count = 0
     for user in users:
         try:
             chat_member = await bot.get_chat_member(user.user_id, user.user_id)
             if chat_member.status != "left" and chat_member.status != "kicked":
-                # Пользователь не заблокировал бота, отправляем сообщение
                 await bot.send_message(user.user_id, text_to_send)
-                await message.answer(f"Сообщение отправлено пользователю: {user.username}")
-            else:
-                await message.answer(f"Сообщение НЕ отправлено: {user.username}")
-                print(f"Пользователь {user.username} заблокировал бота")
+                count += 1
+                await asyncio.sleep(1)
         except Exception as e:
             print(f"Ошибка при отправке сообщения пользователю {user.username}: {str(e)}")
 
-    await message.answer(f"Вы отправили сообщение:\n\n{text_to_send}\n\nвсем пользователям в боте.")
+    await message.answer(f"Вы успешно отправили {count} пользователям сообщение")
     await state.clear()

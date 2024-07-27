@@ -34,3 +34,8 @@ class SendState(StatesGroup):
 
 class TransferBalance(StatesGroup):
     awaiting_data = State()
+
+
+class ReviewState(StatesGroup):
+    awaiting_review = State()
+
