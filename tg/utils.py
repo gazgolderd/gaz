@@ -92,7 +92,7 @@ async def check_invoice_paid(id: str, message, product, chapter, user):
                     builder.add(InlineKeyboardButton(text="Оставить отзыв", callback_data=f"add_review_{product.id}"))
                     # builder.add(InlineKeyboardButton(text="Открыть спор", callback_data=f"cant_find_{product.id}"))
                     builder.adjust(1)
-                    await message.answer(product.text, reply_markup=builder.as_markup())
+                    await message.answer(product.text, reply_markup=builder.as_markup(), parse_mode=None)
                     product.sold = True
                     product.user = user
                     product.save()
