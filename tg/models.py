@@ -48,8 +48,7 @@ class Product(models.Model):
     sold = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
-    class Meta:
-        ordering = ['created_at']
+
 
 
 class Promo(models.Model):
