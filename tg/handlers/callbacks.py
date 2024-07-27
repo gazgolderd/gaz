@@ -338,7 +338,7 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
             builder.add(InlineKeyboardButton(text="Оставить отзыв", callback_data=f"add_review_{product.id}"))
             # builder.add(InlineKeyboardButton(text="Открыть спор", callback_data=f"cant_find_{product.id}"))
             builder.adjust(1)
-            await callback_query.message.answer(product.text, reply_markup=builder.as_markup())
+            await callback_query.message.answer(product.text, reply_markup=builder.as_markup(), parse_mode=None)
             product.sold = True
             product.user = user
             product.save()
