@@ -1,10 +1,16 @@
+import asyncio
+
 from aiogram import Router, Bot
-from aiogram.types import Message
+from aiogram.client.session import aiohttp
+from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
-from ..states import PromoCodeUser, PromoCodeAdmin, TransferBalance, ReviewState
+from aiohttp import ClientConnectorError
+
+from ..states import PromoCodeUser, PromoCodeAdmin, TransferBalance, ReviewState, AddToBalance
 from asgiref.sync import sync_to_async
 from ..models import Promo, TelegramUser, Review
-
+from ..utils import create_invoice, get_crypto_with_retry
+from aiogram import exceptions as tg_exceptions
 router = Router()
 
 
@@ -60,3 +66,94 @@ async def add_review(msg: Message, state: FSMContext, bot: Bot):
     await sync_to_async(Review.objects.create)(user=user, rating=rate, text=msg.text)
     await msg.answer("Спасибо за ваш отзыв")
 
+
+@router.message(AddToBalance.awaiting_sum)
+async def awaiting_sum(msg: Message, state: FSMContext):
+    user = await sync_to_async(TelegramUser.objects.get)(user_id=msg.from_user.id)
+    if msg.text.isdigit():
+        a = await create_balance_invoice(msg.text, "ltc")
+        invoice = a['invoice']
+        amount_in_satoshi = a['amount']
+        address = a['address']
+        amount_in_ltc = amount_in_satoshi / 10 ** 8
+        asyncio.create_task(check_invoice_balance_paid(invoice, Message, user, msg.text, state))
+        await state.set_state(AddToBalance.awaiting_pay)
+        text = "*Пополнение баланса:*\n"
+        text += "➖➖➖➖➖➖➖➖➖➖➖➖\n"
+        text += f"_Способ оплаты_ *LTC*\n\n"
+        text += f"*Сумма к оплате:* `{amount_in_ltc}`  \n"
+        text += f"`{address}`\n\n"
+        text += "✅_Нажми на адрес или сумму, чтобы скопировать!_\n"
+        text += "⏰ _Время на оплату:_ *30 минут*"
+        await msg.answer(text)
+    elif msg.text == "Отмена":
+        await msg.answer("Оплата отменена!", reply_markup=ReplyKeyboardRemove())
+    else:
+        await msg.answer("Введите число: ")
+
+
+@router.message(AddToBalance.awaiting_pay)
+async def awaiting_pay_balance(msg: Message, state: FSMContext):
+    user = await sync_to_async(TelegramUser.objects.get)(user_id=msg.from_user.id)
+    if msg.text == "Отмена":
+        await msg.answer("Оплата отменена", reply_markup=ReplyKeyboardRemove())
+    else:
+        await msg.answer("Пожалуйста отправьте указанную сумму!")
+
+
+async def create_balance_invoice(amount, crypto):
+    account = "apr-5bd9fe28b751de5cf6975a08e4fb545c" # СЮДА АПИРОН АЙДИ
+    create_invoice_url = f'https://apirone.com/api/v2/accounts/{account}/invoices'
+    course = await get_crypto_with_retry(crypto)
+    if course is not None:
+        ltc_price = amount / course
+
+        decimal_places = 8
+
+        amount_in_satoshi = int(ltc_price * 10 ** decimal_places)
+        invoice_data = {
+            "amount": amount_in_satoshi,
+            "currency": "ltc",
+            "lifetime": 2000,
+            "callback_url": "http://example.com",
+        }
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(create_invoice_url, json=invoice_data, headers={'Content-Type': 'application/json'}
+                                        ) as response:
+                    invoice_info = await response.json()
+
+            return invoice_info
+        except ClientConnectorError as e:
+            await create_balance_invoice(amount, crypto)
+
+
+async def check_invoice_balance_paid(id: str, message, user, amount, state):
+    while True:
+        url = f"https://apirone.com/api/v2/invoices/{id}"
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    invoice_data = await response.json()
+
+            if invoice_data['status'] in ('completed', 'paid', 'overpaid'):
+                new_user = await sync_to_async(TelegramUser.objects.get)(user_id=user.user_id)
+                new_user.balance += amount
+                new_user.save()
+                await state.clear()
+                await message.answer(f"Ваш баланс пополнен на {amount}$", reply_markup=ReplyKeyboardRemove())
+                return
+            if invoice_data['status'] == 'expired':
+                await message.answer("Вы просрочили время", reply_markup=ReplyKeyboardRemove())
+                await state.clear()
+                return
+
+            await asyncio.sleep(10)
+        except ClientConnectorError as e:
+            print(f"Connection error: {e}")
+            print("Retrying in 5 seconds...")
+            await asyncio.sleep(5)
+        except tg_exceptions.TelegramNetworkError as e:
+            print(f"Telegram Network error: {e}")
+            print("Retrying in 5 seconds...")
+            await asyncio.sleep(5)

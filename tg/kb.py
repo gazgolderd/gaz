@@ -31,6 +31,7 @@ cancel = InlineKeyboardMarkup(inline_keyboard=[[cancel]])
 #             [InlineKeyboardButton(text="💟 Промокод", callback_data="promo-code-user")],
 #            [InlineKeyboardButton(text="🔙 Назад", callback_data="cancel")]]
 cabinet = [[InlineKeyboardButton(text="💟 Промокод", callback_data="promo-code-user")],
+           [InlineKeyboardButton(text="💰 Пополнить баланс", callback_data="money_add_balance")],
            [InlineKeyboardButton(text="🔙 Назад", callback_data="cancel")]]
 cabinet = InlineKeyboardMarkup(inline_keyboard=cabinet)
 

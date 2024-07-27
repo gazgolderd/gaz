@@ -2,7 +2,7 @@ import requests
 from aiogram import Router, Bot
 from aiogram.filters import CommandObject
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import CallbackQuery, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 from asgiref.sync import sync_to_async
 import asyncio
@@ -10,7 +10,7 @@ import asyncio
 from ..models import Rule, Review, TelegramUser, Product, Chapter, Gram
 from .reviews import get_reviews
 from .. import kb, text, states
-from ..states import ProductState, ChapterState, GramState, TransferBalance, ReviewState
+from ..states import ProductState, ChapterState, GramState, TransferBalance, ReviewState, AddToBalance
 from ..utils import get_unique_products, create_invoice, check_invoice_paid, find_product_location
 
 router = Router()
@@ -28,7 +28,7 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
 
     if callback_query.data == "rule":
         rule = await sync_to_async(Rule.objects.first)()
-        await callback_query.message.edit_text(str(rule.bot_rule), reply_markup=kb.cancel)
+        await callback_query.message.edit_text(str(rule.bot_rule), reply_markup=kb.cancel, parse_mode=None)
 
     if callback_query.data == "reviews":
         page = 1
@@ -346,5 +346,11 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
                 ref_user = user.referred_by
                 ref_user.balance += 1
                 ref_user.save(update_fields=['balance'])
+    if callback_query.data == "money_add_balance":
+        user = await sync_to_async(TelegramUser.objects.get)(user_id=callback_query.from_user.id)
+        builder = ReplyKeyboardBuilder()
+        builder.add(KeyboardButton(text="Отмена"))
+        await callback_query.message.answer("Введите желаемую сумму: ")
+        await state.set_state(AddToBalance.awaiting_sum)
 
 

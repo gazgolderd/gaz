@@ -39,3 +39,7 @@ class TransferBalance(StatesGroup):
 class ReviewState(StatesGroup):
     awaiting_review = State()
 
+
+class AddToBalance(StatesGroup):
+    awaiting_sum = State()
+    awaiting_pay = State()
