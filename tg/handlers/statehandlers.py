@@ -71,7 +71,7 @@ async def add_review(msg: Message, state: FSMContext, bot: Bot):
 async def awaiting_sum(msg: Message, state: FSMContext):
     user = await sync_to_async(TelegramUser.objects.get)(user_id=msg.from_user.id)
     if msg.text.isdigit():
-        a = await create_balance_invoice(msg.text, "ltc")
+        a = await create_balance_invoice(float(msg.text), "ltc")
         invoice = a['invoice']
         amount_in_satoshi = a['amount']
         address = a['address']
@@ -105,6 +105,11 @@ async def create_balance_invoice(amount, crypto):
     account = "apr-5bd9fe28b751de5cf6975a08e4fb545c" # СЮДА АПИРОН АЙДИ
     create_invoice_url = f'https://apirone.com/api/v2/accounts/{account}/invoices'
     course = await get_crypto_with_retry(crypto)
+    try:
+        amount = float(amount)
+    except ValueError:
+        # Обработка ошибки, если amount_str не является допустимым числом
+        raise ValueError("Введено некорректное значение для суммы.")
     if course is not None:
         ltc_price = amount / course
 
