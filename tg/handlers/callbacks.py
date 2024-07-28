@@ -358,7 +358,7 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
             chapters = await sync_to_async(Chapter.objects.all)()
             products_text = "➖➖➖*ВИТРИНА*➖➖➖\n"
             for i in chapters:
-                products_text += f"➖➖*{i.title0}*➖➖\n"
+                products_text += f"➖➖*{i.title}*➖➖\n"
                 products_okt = i.oktyabrsky.all()
                 products_text += f"➖*ОКТЯБРЬСКИЙ*\n"
                 if products_okt:
