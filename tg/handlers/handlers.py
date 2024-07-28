@@ -114,7 +114,7 @@ async  def show_statistic(msg: Message, command: CommandObject):
         for stats in sold_products:
             text += f"ID продукта: {stats.id}\n"
             text += f"Продан пользователю: {stats.user.username if stats.user.username else stats.user.user_id}\n"
-            text += f"Раздел: {stats.gram.chapter}\n"
+            text += f"Раздел: {stats.gram.chapter.title}\n"
             text += f"Грамм: {stats.gram.gram}\n"
             text += f"Стоимость: {stats.gram.usd}\n"
             text += "-" * 20 + "\n"

@@ -139,7 +139,7 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
                 return
             response_text += "\n⬇️ Выберите товар ⬇️"
             builder.adjust(1)
-            await callback_query.message.answer(text=response_text, reply_markup=builder.as_markup())
+            await callback_query.message.answer(text=response_text, reply_markup=builder.as_markup(), parse_mode=None)
 
     if callback_query.data.startswith("choose_chapter_"):
         chapter_id = callback_query.data[15:]
