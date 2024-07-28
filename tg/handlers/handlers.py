@@ -157,3 +157,12 @@ async def del_product_admin(msg: Message, command: CommandObject):
         await msg.answer(f"({product.id}) `{product.text}`\nУдален")
 
 
+@router.message(Command("showproduct"))
+async def del_product_admin(msg: Message, command: CommandObject):
+    user = await sync_to_async(TelegramUser.objects.get)(user_id=msg.from_user.id)
+    if user.is_admin:
+        args = command.args
+        product = await sync_to_async(Product.objects.get)(id=args)
+        await msg.answer(f"({product.id}) `{product.text}`\n"
+                         f"{'Куплен @'+product.user if product.user else ''}"
+                         f"Выложил курьер: {product.courier}")

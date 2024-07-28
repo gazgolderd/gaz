@@ -76,7 +76,7 @@ async def awaiting_sum(msg: Message, state: FSMContext):
         amount_in_satoshi = a['amount']
         address = a['address']
         amount_in_ltc = amount_in_satoshi / 10 ** 8
-        asyncio.create_task(check_invoice_balance_paid(invoice, Message, user, msg.text, state))
+        asyncio.create_task(check_invoice_balance_paid(invoice, Message, user, int(msg.text), state))
         await state.set_state(AddToBalance.awaiting_pay)
         text = "*Пополнение баланса:*\n"
         text += "➖➖➖➖➖➖➖➖➖➖➖➖\n"
@@ -143,7 +143,7 @@ async def check_invoice_balance_paid(id: str, message, user, amount, state):
 
             if invoice_data['status'] in ('completed', 'paid', 'overpaid'):
                 new_user = await sync_to_async(TelegramUser.objects.get)(user_id=user.user_id)
-                new_user.balance += amount
+                new_user.balance += int(amount)
                 new_user.save()
                 await state.clear()
                 await message.answer(f"Ваш баланс пополнен на {amount}$", reply_markup=ReplyKeyboardRemove())

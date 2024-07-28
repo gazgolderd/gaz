@@ -342,6 +342,8 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
             product.sold = True
             product.user = user
             product.save()
+            user.balance -= product.gram.usd
+            user.save()
             if user.referred_by:
                 ref_user = user.referred_by
                 ref_user.balance += 1
@@ -360,20 +362,23 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
             for i in chapters:
                 products_text += f"➖➖*{i.title}*➖➖\n"
                 products_okt = i.oktyabrsky.all()
-                products_text += f"➖*ОКТЯБРЬСКИЙ*\n"
                 if products_okt:
+                    products_text += f"➖*ОКТЯБРЬСКИЙ*\n"
                     for i in products_okt:
                         products_text += f"({i.id}) `{i.text}`\n"
                 product_len = i.leninsky.all()
                 if product_len:
+                    products_text += f"➖*ЛЕНИНСКИЙ*\n"
                     for i in product_len:
                         products_text += f"({i.id}) `{i.text}`\n"
                 product_sverd = i.sverdlovsky.all()
                 if product_sverd:
+                    products_text += f"➖*СВЕРДЛОВСКИЙ*\n"
                     for i in product_sverd:
                         products_text += f"({i.id}) `{i.text}`\n"
                 product_perv = i.pervomaysky.all()
                 if product_perv:
+                    products_text += f"➖*ПЕРВОМАЙСКИЙ*\n"
                     for i in product_perv:
                         products_text += f"({i.id}) `{i.text}`\n"
                 products_text += "\n\n_Для удаления продукта напишите_ /delproduct ID"
