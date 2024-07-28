@@ -147,5 +147,13 @@ async def add_courier(msg: Message, command: CommandObject):
             await msg.answer(f"Пользователь @{user.username} успешно добавлен в курьеры")
 
 
+@router.message(Command("delproduct"))
+async def del_product_admin(msg: Message, command: CommandObject):
+    user = await sync_to_async(TelegramUser.objects.get)(user_id=msg.from_user.id)
+    if user.is_admin:
+        args = command.args
+        product = await sync_to_async(Product.objects.get)(id=args)
+        product.delete()
+        await msg.answer(f"({product.id}) `{product.text}`\nУдален")
 
 

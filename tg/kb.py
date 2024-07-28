@@ -39,7 +39,7 @@ tovars = [InlineKeyboardButton(text="Товары", callback_data="handle_produc
 tovars = InlineKeyboardMarkup(inline_keyboard=[tovars])
 admin_panel = [[InlineKeyboardButton(text="Промокод", callback_data="promo-code-admin")],
                [InlineKeyboardButton(text="Товары", callback_data="handle_product")],
-               # [InlineKeyboardButton(text="Товар пополнен", callback_data="product_fulled")],
+               [InlineKeyboardButton(text="Витрина", callback_data="all_products")],
                # [InlineKeyboardButton(text="Добавить/Списать баланс", callback_data="manage_balance")],
                # [InlineKeyboardButton(text="Рассылка", callback_data="announce_to_chats")],
                # [InlineKeyboardButton(text="Розыгрыш", callback_data="lottery")],

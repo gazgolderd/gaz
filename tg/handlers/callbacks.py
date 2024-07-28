@@ -352,5 +352,34 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
         builder.add(KeyboardButton(text="Отмена"))
         await callback_query.message.answer("Введите желаемую сумму: ")
         await state.set_state(AddToBalance.awaiting_sum)
+    if callback_query.data == "all_products":
+        user = await sync_to_async(TelegramUser.objects.get)(user_id=callback_query.from_user.id)
+        if user.is_admin:
+            chapters = await sync_to_async(Chapter.objects.all)()
+            products_text = "➖➖➖*ВИТРИНА*➖➖➖\n"
+            for i in chapters:
+                products_text += f"➖➖*{i.title0}*➖➖\n"
+                products_okt = i.oktyabrsky.all()
+                products_text += f"➖*ОКТЯБРЬСКИЙ*\n"
+                if products_okt:
+                    for i in products_okt:
+                        products_text += f"({i.id}) `{i.text}`\n"
+                product_len = i.leninsky.all()
+                if product_len:
+                    for i in product_len:
+                        products_text += f"({i.id}) `{i.text}`\n"
+                product_sverd = i.sverdlovsky.all()
+                if product_sverd:
+                    for i in product_sverd:
+                        products_text += f"({i.id}) `{i.text}`\n"
+                product_perv = i.pervomaysky.all()
+                if product_perv:
+                    for i in product_perv:
+                        products_text += f"({i.id}) `{i.text}`\n"
+                products_text += "\n\n_Для удаления продукта напишите_ /delproduct ID"
+            await callback_query.message.answer(products_text)
+
+
+
 
 
