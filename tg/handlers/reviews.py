@@ -18,10 +18,10 @@ async def get_reviews(page, msg):
         builder = InlineKeyboardBuilder()
         response_text = ""
         for i, review in enumerate(reviews, start=start_index + 1):
-            response_text += f"\nОтзыв номер {i}\nОценка: {review.rating}\n{review.text}\n"
+            response_text += f"Отзыв номер {i}\nОценка: {review.rating}\n{review.text}\n"
         if page > 1:
             builder.add(InlineKeyboardButton(text="Предыдущая", callback_data=f"prev_page_{page}"))
         if page < total_pages:
             builder.add(InlineKeyboardButton(text="Следующая", callback_data=f"next_page_{page}"))
         builder.add(InlineKeyboardButton(text="В меню", callback_data="cancel"))
-        await msg.edit_text(text=response_text, reply_markup=builder.as_markup())
+        await msg.edit_text(text=response_text, reply_markup=builder.as_markup(), parse_mode=None)

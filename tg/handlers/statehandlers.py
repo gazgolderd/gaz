@@ -84,7 +84,7 @@ async def awaiting_sum(msg: Message, state: FSMContext):
         text += f"*Сумма к оплате:* `{amount_in_ltc}`  \n"
         text += f"`{address}`\n\n"
         text += "✅_Нажми на адрес или сумму, чтобы скопировать!_\n"
-        text += "⏰ _Время на оплату:_ *30 минут*"
+        text += "⏰ _Время на оплату:_ *60 минут*"
         await msg.answer(text)
     elif msg.text == "Отмена":
         await msg.answer("Оплата отменена!", reply_markup=ReplyKeyboardRemove())
@@ -119,7 +119,7 @@ async def create_balance_invoice(amount, crypto):
         invoice_data = {
             "amount": amount_in_satoshi,
             "currency": "ltc",
-            "lifetime": 2000,
+            "lifetime": 4000,
             "callback_url": "http://example.com",
         }
         try:

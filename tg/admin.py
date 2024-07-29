@@ -4,7 +4,7 @@ from .models import TelegramUser, Rule, Review, Product, Chapter, Gram, Promo, L
 
 @admin.register(TelegramUser)
 class TelegramUserAdmin(admin.ModelAdmin):
-    list_display = ['username', 'balance']
+    list_display = ['username', 'balance', 'is_admin', 'is_courier']
 
 
 @admin.register(Rule)
@@ -19,7 +19,7 @@ class ReviewAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user', 'sold']
+    list_display = ['id', 'user', 'sold', 'courier']
 
 
 @admin.register(Chapter)
