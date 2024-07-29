@@ -11,7 +11,7 @@ not_subscribed = InlineKeyboardMarkup(inline_keyboard=not_subscribed)
 menu = [
     [InlineKeyboardButton(text="🎁 Наличие товаров", callback_data="chapters")],
     [InlineKeyboardButton(text="👤 Профиль", callback_data="cabinet"),
-     InlineKeyboardButton(text="Отзывы", callback_data="reviews")],
+     InlineKeyboardButton(text="Отзывы", url="https://t.me/+p0Bhm_J3JgtmZjli")],
      # InlineKeyboardButton(text="Отзывы", url="https://t.me/+R7OAXJEGr1hjYzgy")],
     [InlineKeyboardButton(text="⚠️ Правила", callback_data="rule")],
     # [InlineKeyboardButton(text="⚠️ Правила", callback_data="rule"),
