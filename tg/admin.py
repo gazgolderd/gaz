@@ -4,7 +4,7 @@ from .models import TelegramUser, Rule, Review, Product, Chapter, Gram, Promo, L
 
 @admin.register(TelegramUser)
 class TelegramUserAdmin(admin.ModelAdmin):
-    list_display = ['username']
+    list_display = ['username', 'balance']
 
 
 @admin.register(Rule)

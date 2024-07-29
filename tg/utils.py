@@ -83,7 +83,6 @@ async def check_invoice_paid(id: str, message, product, chapter, user):
                 async with session.get(url) as response:
                     invoice_data = await response.json()
 
-
             if invoice_data['status'] in ('completed', 'paid', 'overpaid'):
                 location = find_product_location(product, chapter)
                 if location is not None:

@@ -332,22 +332,23 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
         product_id = data[4]
         product = await sync_to_async(Product.objects.get)(id=product_id)
         location = find_product_location(product, product.gram.chapter)
-        if location is not None:
-            location.remove(product)
-            builder = InlineKeyboardBuilder()
-            builder.add(InlineKeyboardButton(text="Оставить отзыв", callback_data=f"add_review_{product.id}"))
-            # builder.add(InlineKeyboardButton(text="Открыть спор", callback_data=f"cant_find_{product.id}"))
-            builder.adjust(1)
-            await callback_query.message.answer(product.text, reply_markup=builder.as_markup(), parse_mode=None)
-            product.sold = True
-            product.user = user
-            product.save()
-            user.balance -= product.gram.usd
-            user.save()
-            if user.referred_by:
-                ref_user = user.referred_by
-                ref_user.balance += 1
-                ref_user.save(update_fields=['balance'])
+        if user.balance > product.gram.usd:
+            if location is not None:
+                location.remove(product)
+                builder = InlineKeyboardBuilder()
+                builder.add(InlineKeyboardButton(text="Оставить отзыв", callback_data=f"add_review_{product.id}"))
+                # builder.add(InlineKeyboardButton(text="Открыть спор", callback_data=f"cant_find_{product.id}"))
+                builder.adjust(1)
+                await callback_query.message.answer(product.text, reply_markup=builder.as_markup(), parse_mode=None)
+                product.sold = True
+                product.user = user
+                product.save()
+                user.balance -= product.gram.usd
+                user.save()
+                if user.referred_by:
+                    ref_user = user.referred_by
+                    ref_user.balance += 1
+                    ref_user.save(update_fields=['balance'])
     if callback_query.data == "money_add_balance":
         user = await sync_to_async(TelegramUser.objects.get)(user_id=callback_query.from_user.id)
         builder = ReplyKeyboardBuilder()
@@ -366,22 +367,28 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
                     products_text += f"➖*ОКТЯБРЬСКИЙ*\n"
                     for i in products_okt:
                         products_text += f"({i.id}) `{i.text}`\n"
+                        products_text += f"*{i.gram.chapter.title}* {i.gram.gram}гр ${i.gram.usd}\n"
                 product_len = i.leninsky.all()
                 if product_len:
                     products_text += f"➖*ЛЕНИНСКИЙ*\n"
                     for i in product_len:
                         products_text += f"({i.id}) `{i.text}`\n"
+                        products_text += f"*{i.gram.chapter.title}* {i.gram.gram}гр ${i.gram.usd}\n"
                 product_sverd = i.sverdlovsky.all()
                 if product_sverd:
                     products_text += f"➖*СВЕРДЛОВСКИЙ*\n"
                     for i in product_sverd:
                         products_text += f"({i.id}) `{i.text}`\n"
+                        products_text += f"*{i.gram.chapter.title}* {i.gram.gram}гр ${i.gram.usd}\n"
                 product_perv = i.pervomaysky.all()
                 if product_perv:
                     products_text += f"➖*ПЕРВОМАЙСКИЙ*\n"
                     for i in product_perv:
                         products_text += f"({i.id}) `{i.text}`\n"
-                products_text += "\n\n_Для удаления продукта напишите_ /delproduct ID"
+                        products_text += f"*{i.gram.chapter.title}* {i.gram.gram}гр ${i.gram.usd}\n"
+                products_text += f"\n"
+            products_text += "\n\n_Для удаления продукта напишите_ /delproduct *ID*\n"
+            products_text += "\n\n_Для просмотра продукта напишите_ /showproduct *ID*\n"
             await callback_query.message.answer(products_text)
 
 
