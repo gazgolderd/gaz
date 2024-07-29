@@ -164,6 +164,6 @@ async def del_product_admin(msg: Message, command: CommandObject):
         args = command.args
         product = await sync_to_async(Product.objects.get)(id=args)
         await msg.answer(f"({product.id}) {product.text}\n"
-                         f"{product.gram.chapter.title} {product.gram.gram}гр ${product.gram.usd}"
-                         f"{'Куплен@'+product.user.username + '' if product.user else 'Не куплен'}"
+                         f"{product.gram.chapter.title} {product.gram.gram}гр ${product.gram.usd}\n"
+                         f"{'Куплен@'+product.user.username + '' if product.user else 'Не куплен'}\n"
                          f"\nВыложил курьер: {product.courier.username if product.courier.username else product.courier.user_id}", parse_mode=None)
