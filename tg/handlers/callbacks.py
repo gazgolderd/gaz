@@ -388,7 +388,7 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
                         products_text += f"*{i.gram.chapter.title}* {i.gram.gram}гр ${i.gram.usd}\n"
                 products_text += f"\n"
             products_text += "\n\n_Для удаления продукта напишите_ /delproduct *ID*\n"
-            products_text += "\n\n_Для просмотра продукта напишите_ /showproduct *ID*\n"
+            products_text += "_Для просмотра продукта напишите_ /showproduct *ID*"
             await callback_query.message.answer(products_text)
 
 
