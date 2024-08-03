@@ -82,7 +82,29 @@ async def check_invoice_paid(id: str, message, product, chapter, user):
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as response:
                     invoice_data = await response.json()
-
+            if invoice_data['status'] == 'partpaid':
+                for i in invoice_data['history']:
+                    if i['status'] == 'partpaid':
+                        course = await get_crypto_with_retry('ltc')
+                        amount = float(i['amount']) / 10 ** 8
+                        usd_amount = amount * course
+                        usd_amount = int(usd_amount)
+                        ltc_price = amount / course
+                        formatted_ltc = round(ltc_price, 6)
+                        if usd_amount >= 1:
+                            user.balance += int(usd_amount)
+                            user.save()
+                            await message.answer(f"*Вы оплатили только часть, на ваш баланс поступило $*{int(usd_amount)}\n"
+                                                 f"❗️Пожалуйста, больше не отправляйте средства на ранее предоставленные "
+                                                 f"реквизиты кошелька. Создайте новую заявку на пополнение или покупку. "
+                                                 f"Если вы отправите средства на старый кошелек, они не будут зачислены.")
+                            return 
+                        elif usd_amount <= 0:
+                            await message.answer(f"Вы отправили `{formatted_ltc}` LTC, это меньше 1$\n"
+                                                  f"❗️Пожалуйста, больше не отправляйте средства на ранее предоставленные "
+                                                 f"реквизиты кошелька. Создайте новую заявку на пополнение или покупку. "
+                                                 f"Если вы отправите средства на старый кошелек, они не будут зачислены.")
+                            return
             if invoice_data['status'] in ('completed', 'paid', 'overpaid'):
                 location = find_product_location(product, chapter)
                 if location is not None:
