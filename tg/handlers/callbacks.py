@@ -349,6 +349,8 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
                     ref_user = user.referred_by
                     ref_user.balance += 1
                     ref_user.save(update_fields=['balance'])
+            else:
+                await callback_query.message.answer("Выбранный продукт выкуплен, наличие /start")
     if callback_query.data == "money_add_balance":
         user = await sync_to_async(TelegramUser.objects.get)(user_id=callback_query.from_user.id)
         builder = ReplyKeyboardBuilder()
