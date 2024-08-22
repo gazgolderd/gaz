@@ -68,7 +68,7 @@ async def add_review(msg: Message, state: FSMContext, bot: Bot):
 
 
 @router.message(AddToBalance.awaiting_sum)
-async def awaiting_sum(msg: Message, state: FSMContext):
+async def awaiting_sum(msg: Message, state: FSMContext, bot: Bot):
     user = await sync_to_async(TelegramUser.objects.get)(user_id=msg.from_user.id)
     if msg.text.isdigit():
         a = await create_balance_invoice(float(msg.text), "ltc")
@@ -76,7 +76,7 @@ async def awaiting_sum(msg: Message, state: FSMContext):
         amount_in_satoshi = a['amount']
         address = a['address']
         amount_in_ltc = amount_in_satoshi / 10 ** 8
-        asyncio.create_task(check_invoice_balance_paid(invoice, Message, user, int(msg.text), state))
+        asyncio.create_task(check_invoice_balance_paid(invoice, Message, user, int(msg.text), state, bot))
         await state.set_state(AddToBalance.awaiting_pay)
         text = "*Пополнение баланса:*\n"
         text += "➖➖➖➖➖➖➖➖➖➖➖➖\n"
@@ -133,13 +133,24 @@ async def create_balance_invoice(amount, crypto):
             await create_balance_invoice(amount, crypto)
 
 
-async def check_invoice_balance_paid(id: str, message, user, amount, state):
+async def check_invoice_balance_paid(id: str, message, user, amount, state, bot):
     while True:
         url = f"https://apirone.com/api/v2/invoices/{id}"
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as response:
-                    invoice_data = await response.json()
+                    if response.status == 200:
+                        if response.content_type == 'application/json':
+                            invoice_data = await response.json()
+                        else:
+                            text = await response.text()
+                            print(f"Ошибка: сервер вернул {response.content_type}. Текст ответа: {text}")
+                            await asyncio.sleep(10)
+                            continue
+                    else:
+                        print(f"Ошибка: статус ответа {response.status}")
+                        await asyncio.sleep(10)
+                        continue
             if invoice_data['status'] == 'partpaid':
                 for i in invoice_data['history']:
                     if i['status'] == 'partpaid':
@@ -151,16 +162,18 @@ async def check_invoice_balance_paid(id: str, message, user, amount, state):
                         if usd_amount > 0:
                             user.balance += int(usd_amount)
                             user.save()
-                            await message.answer(f"*Вы оплатили только часть, на ваш баланс поступило $*{int(usd_amount)}\n"
+                            await bot.send_message(chat_id=user.user_id, text=f"*Вы оплатили только часть, на ваш баланс поступило $*{int(usd_amount)}\n"
                                                  f"❗️Пожалуйста, больше не отправляйте средства на ранее предоставленные "
                                                  f"реквизиты кошелька. Создайте новую заявку на пополнение или покупку. "
                                                  f"Если вы отправите средства на старый кошелек, они не будут зачислены.")
+
                             return
                         elif usd_amount <= 0:
-                            await message.answer(f"Вы отправили `{formatted_ltc}` LTC, это меньше 1$\n"
+                            await bot.send_message(chat_id=user.user_id, text=f"Вы отправили `{formatted_ltc}` LTC, это меньше 1$\n"
                                                   f"❗️Пожалуйста, больше не отправляйте средства на ранее предоставленные "
                                                  f"реквизиты кошелька. Создайте новую заявку на пополнение или покупку. "
                                                  f"Если вы отправите средства на старый кошелек, они не будут зачислены.")
+                        
                             return
             if invoice_data['status'] in ('completed', 'paid', 'overpaid'):
                 new_user = await sync_to_async(TelegramUser.objects.get)(user_id=user.user_id)

@@ -174,7 +174,7 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
                 gram_value = gram['gram__gram']
                 product_object = products.filter(gram__gram=gram_value).first()
                 builder.add(InlineKeyboardButton(text=f"💵{gram_value} GR = ${product_object.gram.usd}\n",
-                                                 callback_data=f"confirm_{product_object.id}"))
+                                                 callback_data=f"confirm_{product_object.id}_okt"))
         if place == "len":
             products = chapter.leninsky.all()
             unique_grams = products.values('gram__gram').distinct()
@@ -182,7 +182,7 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
                 gram_value = gram['gram__gram']
                 product_object = products.filter(gram__gram=gram_value).first()
                 builder.add(InlineKeyboardButton(text=f"💵{gram_value} GR = ${product_object.gram.usd}\n",
-                                                 callback_data=f"confirm_{product_object.id}"))
+                                                 callback_data=f"confirm_{product_object.id}_len"))
         if place == "per":
             products = chapter.pervomaysky.all()
             unique_grams = products.values('gram__gram').distinct()
@@ -190,7 +190,7 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
                 gram_value = gram['gram__gram']
                 product_object = products.filter(gram__gram=gram_value).first()
                 builder.add(InlineKeyboardButton(text=f"💵{gram_value} GR = ${product_object.gram.usd}\n",
-                                                 callback_data=f"confirm_{product_object.id}"))
+                                                 callback_data=f"confirm_{product_object.id}_per"))
         if place == "sve":
             products = chapter.sverdlovsky.all()
             unique_grams = products.values('gram__gram').distinct()
@@ -198,7 +198,7 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
                 gram_value = gram['gram__gram']
                 product_object = products.filter(gram__gram=gram_value).first()
                 builder.add(InlineKeyboardButton(text=f"💵{gram_value} GR = ${product_object.gram.usd}\n",
-                                                 callback_data=f"confirm_{product_object.id}"))
+                                                 callback_data=f"confirm_{product_object.id}_sve"))
         builder.adjust(1)
 
         await callback_query.message.delete()
@@ -210,7 +210,9 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
                                    reply_markup=builder.as_markup())
 
     if callback_query.data.startswith("confirm_"):
-        product_id = callback_query.data[8:]
+        data = callback_query.data.split("_")
+        product_id = data[1]
+        place = data[2]
         product = await sync_to_async(Product.objects.get)(id=product_id)
         user = await sync_to_async(TelegramUser.objects.get)(user_id=callback_query.from_user.id)
         response_text = (f"☑️ *Подтверждение*:\n ➖➖➖➖➖➖➖➖➖➖\n*📦 Ваш товар*: *{product.gram.chapter.title}*\n"
@@ -332,7 +334,7 @@ async def handle_callback_query(callback_query: CallbackQuery, state: FSMContext
         product_id = data[4]
         product = await sync_to_async(Product.objects.get)(id=product_id)
         location = find_product_location(product, product.gram.chapter)
-        if user.balance > product.gram.usd:
+        if user.balance >= product.gram.usd:
             if location is not None:
                 location.remove(product)
                 builder = InlineKeyboardBuilder()
